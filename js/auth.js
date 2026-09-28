@@ -1,6 +1,8 @@
+const API_URL = "http://localhost:3000";
+
 document
   .getElementById("registerForm")
-  .addEventListener("submit", function (event) {
+  .addEventListener("submit", async function (event) {
     event.preventDefault();
     const name = document.getElementById("regName").value;
     const email = document.getElementById("regEmail").value;
@@ -12,42 +14,56 @@ document
       password: password,
     };
 
-    const usersText = localStorage.getItem("users");
-    const users = usersText ? JSON.parse(usersText) : [];
+    const response = await fetch(`${API_URL}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(user),
+    });
 
-    users.push(user);
-    localStorage.setItem("users", JSON.stringify(users));
-    console.log(users);
-    const modalElement = document.getElementById("successModal");
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
+    if (response.ok) {
+      const modalElement = document.getElementById("successModal");
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+
+      renderUsersTable();
+    } else {
+      console.log("Registration failed");
+    }
   });
 
 document
   .getElementById("loginForm")
-  .addEventListener("submit", function (event) {
+  .addEventListener("submit", async function (event) {
     event.preventDefault();
 
     const email = document.getElementById("loginEmail").value;
     const password = document.getElementById("loginPassword").value;
 
-    const usersText = localStorage.getItem("users");
-    const users = usersText ? JSON.parse(usersText) : [];
-
-    const savedUser = users.find(function (u) {
-      return u.email === email && u.password === password;
+    const response = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (savedUser) {
-      console.log("Успешный вход!");
+    const modalElement = document.getElementById("loginModal");
+    const modalTitle = document.getElementById("loginModalTitle");
+    const modalText = document.getElementById("loginModalText");
+    const modal = new bootstrap.Modal(modalElement);
+
+    if (response.ok) {
+      modalTitle.textContent = "Success";
+      modalText.textContent = "Login successful!";
     } else {
-      console.log("Неверный email или пароль");
+      modalTitle.textContent = "Error";
+      modalText.textContent = "Invalid email or password";
     }
+
+    modal.show();
   });
 
-function renderUsersTable() {
-  const usersText = localStorage.getItem("users");
-  const users = usersText ? JSON.parse(usersText) : [];
+async function renderUsersTable() {
+  const response = await fetch(`${API_URL}/users`);
+  const users = await response.json();
 
   const tbody = document.getElementById("usersTableBody");
   tbody.innerHTML = "";
